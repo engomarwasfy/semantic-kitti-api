@@ -38,20 +38,19 @@ class SSCDataset:
   def __init__(self, directory, split="train"):
     """ Load data from given dataset directory. """
 
-    self.files = {}
     self.filenames = []
 
-    for ext in SPLIT_FILES[split]:
-      self.files[EXT_TO_NAME[ext]] = []
-
+    self.files = {EXT_TO_NAME[ext]: [] for ext in SPLIT_FILES[split]}
     for sequence in SPLIT_SEQUENCES[split]:
       complete_path = os.path.join(directory, "sequences", sequence, "voxels")
-      if not os.path.exists(complete_path): raise RuntimeError("Voxel directory missing: " + complete_path)
+      if not os.path.exists(complete_path):
+        raise RuntimeError(f"Voxel directory missing: {complete_path}")
 
       files = os.listdir(complete_path)
       for ext in SPLIT_FILES[split]:
         data = sorted([os.path.join(complete_path, f) for f in files if f.endswith(ext)])
-        if len(data) == 0: raise RuntimeError("Missing data for " + EXT_TO_NAME[ext])
+        if len(data) == 0:
+          raise RuntimeError(f"Missing data for {EXT_TO_NAME[ext]}")
         self.files[EXT_TO_NAME[ext]].extend(data)
 
       # this information is handy for saving the data later, since you need to provide sequences/XX/predictions/000000.label:
@@ -88,12 +87,12 @@ class SSCDataset:
 
 if __name__ == "__main__":
   # Small example of the usage.
-  
+
   # Replace "/path/to/semantic/kitti/" with actual path to the folder containing the "sequences" folder
   dataset = SSCDataset("/path/to/semantic/kitti/")
-  print("# files: {}".format(len(dataset)))
+  print(f"# files: {len(dataset)}")
 
   (seq, filename), data = dataset[100]
-  print("Contents of entry 100 (" + seq + ":" + filename + "):")
+  print(f"Contents of entry 100 ({seq}:{filename}):")
   for k, v in data.items():
     print("  {:8} : shape = {}, contents = {}".format(k, v.shape, np.unique(v)))

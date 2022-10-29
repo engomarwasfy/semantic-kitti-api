@@ -35,7 +35,7 @@ if __name__ == '__main__':
 
   # open config file
   try:
-    print("Opening config file %s" % FLAGS.config)
+    print(f"Opening config file {FLAGS.config}")
     CFG = yaml.safe_load(open(FLAGS.config, 'r'))
   except Exception as e:
     print(e)
@@ -62,7 +62,7 @@ if __name__ == '__main__':
     # make seq string
     print("*" * 80)
     seqstr = '{0:02d}'.format(int(seq))
-    print("parsing seq {}".format(seq))
+    print(f"parsing seq {seq}")
 
     # does sequence folder exist?
     scan_paths = os.path.join(FLAGS.dataset, "sequences",
@@ -108,9 +108,9 @@ if __name__ == '__main__':
       # make histogram and accumulate
       count = np.bincount(scan.sem_label)
       seq_total += count.sum()
-      for key, data in seq_accum.items():
+      for key, value in seq_accum.items():
         if count.size > key:
-          seq_accum[key] += count[key]
+          value += count[key]
           # zero the count
           count[key] = 0
       for i, c in enumerate(count):
@@ -133,4 +133,4 @@ if __name__ == '__main__':
   print(accum)
   accum = collections.OrderedDict(sorted(accum.items(), key=lambda t: t[0]))
   for key, data in accum.items():
-    print(" {}: {}".format(key, data / total))
+    print(f" {key}: {data / total}")

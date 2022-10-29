@@ -58,7 +58,7 @@ if __name__ == "__main__":
 
   try:
 
-    print('Validating zip archive "{}".\n'.format(FLAGS.zipfile))
+    print(f'Validating zip archive "{FLAGS.zipfile}".\n')
 
     print( " ============ {:^10} ============ ".format(FLAGS.task))
 
@@ -68,7 +68,7 @@ if __name__ == "__main__":
     print(checkmark)
 
     with zipfile.ZipFile(FLAGS.zipfile) as zipfile:
-      if FLAGS.task == "segmentation" or FLAGS.task == "panoptic":
+      if FLAGS.task in ["segmentation", "panoptic"]:
         
 
         print("  2. Checking directory structure... ", end="", flush=True)
@@ -78,12 +78,15 @@ if __name__ == "__main__":
           raise ValidationException('Directory "sequences" missing inside zip file.')
 
         for sequence in range(11, 22):
-          sequence_directory = "sequences/{}/".format(sequence)
+          sequence_directory = f"sequences/{sequence}/"
           if sequence_directory not in directories:
-            raise ValidationException('Directory "{}" missing inside zip file.'.format(sequence_directory))
-          predictions_directory = sequence_directory + "predictions/"
+            raise ValidationException(
+                f'Directory "{sequence_directory}" missing inside zip file.')
+          predictions_directory = f"{sequence_directory}predictions/"
           if predictions_directory not in directories:
-            raise ValidationException('Directory "{}" missing inside zip file.'.format(predictions_directory))
+            raise ValidationException(
+                f'Directory "{predictions_directory}" missing inside zip file.'
+            )
 
         print(checkmark)
 
@@ -92,12 +95,18 @@ if __name__ == "__main__":
         prediction_files = {info.filename: info for info in zipfile.infolist() if not info.filename.endswith("/")}
 
         for sequence in range(11, 22):
-          sequence_directory = 'sequences/{}'.format(sequence)
-          velodyne_directory = os.path.join(FLAGS.dataset, 'sequences/{}/velodyne/'.format(sequence))
+          sequence_directory = f'sequences/{sequence}'
+          velodyne_directory = os.path.join(FLAGS.dataset,
+                                            f'sequences/{sequence}/velodyne/')
 
           velodyne_files = sorted([os.path.join(velodyne_directory, file) for file in os.listdir(velodyne_directory)])
-          label_files = sorted([os.path.join(sequence_directory, "predictions", os.path.splitext(filename)[0] + ".label")
-                                for filename in os.listdir(velodyne_directory)])
+          label_files = sorted([
+              os.path.join(
+                  sequence_directory,
+                  "predictions",
+                  f"{os.path.splitext(filename)[0]}.label",
+              ) for filename in os.listdir(velodyne_directory)
+          ])
 
           for velodyne_file, label_file in zip(velodyne_files, label_files):
             num_points = os.path.getsize(velodyne_file) / (4 * float_bytes)
@@ -107,8 +116,10 @@ if __name__ == "__main__":
 
             num_labels = prediction_files[label_file].file_size / uint32_bytes
             if num_labels != num_points:
-              raise ValidationException('label file "' + label_file +
-                                        "' should have {} labels, but found {} labels!".format(int(num_points), int(num_labels)))
+              raise ValidationException((
+                  'label file "' + label_file +
+                  f"' should have {int(num_points)} labels, but found {int(num_labels)} labels!"
+              ))
 
         print(checkmark)
       elif FLAGS.task == "completion":
@@ -119,19 +130,22 @@ if __name__ == "__main__":
           raise ValidationException('Directory "sequences" missing inside zip file.')
 
         for sequence in range(11, 22):
-          sequence_directory = "sequences/{}/".format(sequence)
+          sequence_directory = f"sequences/{sequence}/"
           if sequence_directory not in directories:
-            raise ValidationException('Directory "{}" missing inside zip file.'.format(sequence_directory))
-          predictions_directory = sequence_directory + "predictions/"
+            raise ValidationException(
+                f'Directory "{sequence_directory}" missing inside zip file.')
+          predictions_directory = f"{sequence_directory}predictions/"
           if predictions_directory not in directories:
-            raise ValidationException('Directory "{}" missing inside zip file.'.format(predictions_directory))
+            raise ValidationException(
+                f'Directory "{predictions_directory}" missing inside zip file.'
+            )
 
         print(checkmark)
 
         print('  3. Checking file sizes', end='', flush=True)
 
         prediction_files = {str(info.filename): info for info in zipfile.infolist() if not info.filename.endswith("/")}
-        
+
         # description.txt is optional and one should not get an error.
         if "description.txt" in prediction_files: del prediction_files["description.txt"]
 
@@ -140,12 +154,17 @@ if __name__ == "__main__":
 
         for sequence in range(11, 22):
 
-          sequence_directory = 'sequences/{}'.format(sequence)
-          voxel_directory = os.path.join(FLAGS.dataset, 'sequences/{}/voxels/'.format(sequence))
+          sequence_directory = f'sequences/{sequence}'
+          voxel_directory = os.path.join(FLAGS.dataset, f'sequences/{sequence}/voxels/')
 
           voxel_files = sorted([os.path.join(voxel_directory, file) for file in os.listdir(voxel_directory) if file.endswith(".bin")])
-          label_files = sorted([os.path.join(sequence_directory, "predictions", os.path.splitext(filename)[0] + ".label")
-                                for filename in os.listdir(voxel_directory)])
+          label_files = sorted([
+              os.path.join(
+                  sequence_directory,
+                  "predictions",
+                  f"{os.path.splitext(filename)[0]}.label",
+              ) for filename in os.listdir(voxel_directory)
+          ])
           necessary_files.extend(label_files)
 
           for voxel_file, label_file in zip(voxel_files, label_files):
@@ -157,20 +176,23 @@ if __name__ == "__main__":
 
             num_labels = prediction_files[label_file].file_size / uint16_bytes # expecting uint16 for labels.
             if num_labels != num_voxels:
-              raise ValidationException('label file "' + label_file +
-                                        "' should have {} labels, but found {} labels!".format(int(num_voxels), int(num_labels)))
+              raise ValidationException((
+                  'label file "' + label_file +
+                  f"' should have {int(num_voxels)} labels, but found {int(num_labels)} labels!"
+              ))
           print(".", end="", flush=True)
         print(". ", end="", flush=True)
         print(checkmark)
 
         print('  4. Checking for unneeded files', end='', flush=True)
         if len(necessary_files) != len(prediction_files.keys()):
-          filelist = sorted([f for f in prediction_files.keys() if f not in necessary_files])
-          ell = ""
-          if len(filelist) > 10: ell = ", ..."
-          raise ValidationException("Zip contains unneeded predictions, e.g., {}".format(",".join(filelist[:10]) + ell))
-        
-        print(".... " + checkmark)
+          filelist = sorted([f for f in prediction_files if f not in necessary_files])
+          ell = ", ..." if len(filelist) > 10 else ""
+          raise ValidationException(
+              f'Zip contains unneeded predictions, e.g., {",".join(filelist[:10]) + ell}'
+          )
+
+        print(f".... {checkmark}")
       else:
         raise NotImplementedError("Unknown task.")
   except ValidationException as ex:

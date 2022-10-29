@@ -7,18 +7,19 @@ import yaml
 import sys
 import numpy as np
 
-DISTANCES = [(1e-8, 10.0),
-             (10.0, 20.0),
-             (20.0, 30.0),
-             (30.0, 40.0),
-             (40.0, 50.0)]
-
 # possible splits
 splits = ["train", "valid", "test"]
 
 # possible backends
 backends = ["numpy", "torch"]
 
+DISTANCES = [
+    (1e-8, 10.0),
+    (10.0, 20.0),
+    (20.0, 30.0),
+    (30.0, 40.0),
+    (40.0, 50.0),
+]
 if __name__ == '__main__':
   parser = argparse.ArgumentParser("./evaluate_semantics_by_distance.py")
   parser.add_argument(
@@ -36,20 +37,20 @@ if __name__ == '__main__':
       ' we look for the labels in the same directory as dataset'
   )
   parser.add_argument(
-      '--split', '-s',
+      '--split',
+      '-s',
       type=str,
       required=False,
       default="valid",
-      help='Split to evaluate on. One of ' +
-      str(splits) + '. Defaults to %(default)s',
+      help=f'Split to evaluate on. One of {splits}. Defaults to %(default)s',
   )
   parser.add_argument(
-      '--backend', '-b',
+      '--backend',
+      '-b',
       type=str,
       required=False,
       default="numpy",
-      help='Backend for evaluation. One of ' +
-      str(backends) + ' Defaults to %(default)s',
+      help=f'Backend for evaluation. One of {backends} Defaults to %(default)s',
   )
   parser.add_argument(
       '--datacfg', '-dc',
@@ -99,7 +100,7 @@ if __name__ == '__main__':
   # assert backend
   assert(FLAGS.backend in backends)
 
-  print("Opening data config file %s" % FLAGS.datacfg)
+  print(f"Opening data config file {FLAGS.datacfg}")
   DATA = yaml.safe_load(open(FLAGS.datacfg, 'r'))
 
   # get number of interest classes, and the label mappings
@@ -138,7 +139,7 @@ if __name__ == '__main__':
       evaluators.append(iouEval(nr_classes, ignore))
       evaluators[i].reset()
     else:
-      print("Backend for evaluator should be one of ", str(backends))
+      print("Backend for evaluator should be one of ", backends)
       quit()
 
   # get test set
@@ -148,8 +149,7 @@ if __name__ == '__main__':
   scan_names = []
   for sequence in test_sequences:
     sequence = '{0:02d}'.format(int(sequence))
-    label_paths = os.path.join(FLAGS.dataset, "sequences",
-                               str(sequence), "velodyne")
+    label_paths = os.path.join(FLAGS.dataset, "sequences", sequence, "velodyne")
     # populate the label names
     seq_scan_names = [os.path.join(dp, f) for dp, dn, fn in os.walk(
         os.path.expanduser(label_paths)) for f in fn if ".bin" in f]
@@ -161,8 +161,7 @@ if __name__ == '__main__':
   label_names = []
   for sequence in test_sequences:
     sequence = '{0:02d}'.format(int(sequence))
-    label_paths = os.path.join(FLAGS.dataset, "sequences",
-                               str(sequence), "labels")
+    label_paths = os.path.join(FLAGS.dataset, "sequences", sequence, "labels")
     # populate the label names
     seq_label_names = [os.path.join(dp, f) for dp, dn, fn in os.walk(
         os.path.expanduser(label_paths)) for f in fn if ".label" in f]
@@ -257,18 +256,18 @@ if __name__ == '__main__':
     results = {}
     for idx in range(len(DISTANCES)):
       # make string for distance
-      d_str = str(DISTANCES[idx][-1])+"m_"
+      d_str = f"{str(DISTANCES[idx][-1])}m_"
 
       # get values for this distance range
       m_accuracy = evaluators[idx].getacc()
       m_jaccard, class_jaccard = evaluators[idx].getIoU()
 
       # put in dictionary
-      results[d_str+"accuracy_mean"] = float(m_accuracy)
-      results[d_str+"iou_mean"] = float(m_jaccard)
+      results[f"{d_str}accuracy_mean"] = float(m_accuracy)
+      results[f"{d_str}iou_mean"] = float(m_jaccard)
       for i, jacc in enumerate(class_jaccard):
         if i not in ignore:
-          results[d_str+"iou_"+class_strings[class_inv_remap[i]]] = float(jacc)
+          results[f"{d_str}iou_{class_strings[class_inv_remap[i]]}"] = float(jacc)
       # save to file
       with open('segmentation_scores_distance.txt', 'w') as yaml_file:
         yaml.dump(results, yaml_file, default_flow_style=False)

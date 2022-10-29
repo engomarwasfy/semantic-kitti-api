@@ -43,30 +43,36 @@ if __name__ == "__main__":
     for d in seq_dirs:
       files.extend([(d, os.path.splitext(f)[0]) for f in os.listdir(os.path.join(src_dir, d, "input"))])
 
-  print("Processing {} files.".format(len(files)))
+  print(f"Processing {len(files)} files.")
 
   for seq_dir, filename in tqdm(files):
 
-    if os.path.exists(os.path.join(src_dir, seq_dir, "input", filename + ".mat")):
-      data = sio.loadmat(os.path.join(src_dir, seq_dir, "input", filename + ".mat"))
+    if os.path.exists(
+        os.path.join(src_dir, seq_dir, "input", f"{filename}.mat")):
+      data = sio.loadmat(os.path.join(src_dir, seq_dir, "input", f"{filename}.mat"))
 
       out_dir = os.path.join(dst_dir, seq_dir, "voxels")
       os.makedirs(out_dir, exist_ok=True)
 
       compressed = pack(data["voxels"])
-      compressed.tofile(os.path.join(out_dir, os.path.splitext(filename)[0] + ".bin"))
+      compressed.tofile(
+          os.path.join(out_dir, f"{os.path.splitext(filename)[0]}.bin"))
 
-    if os.path.exists(os.path.join(src_dir, seq_dir, "target_gt", filename + ".mat")):
-      data = sio.loadmat(os.path.join(src_dir, seq_dir, "target_gt", filename + ".mat"))
+    if os.path.exists(
+        os.path.join(src_dir, seq_dir, "target_gt", f"{filename}.mat")):
+      data = sio.loadmat(
+          os.path.join(src_dir, seq_dir, "target_gt", f"{filename}.mat"))
 
       out_dir = os.path.join(dst_dir, seq_dir, "voxels")
       os.makedirs(out_dir, exist_ok=True)
 
       labels = data["voxels"].astype(np.uint16)
-      labels.tofile(os.path.join(out_dir, os.path.splitext(filename)[0] + ".label"))
+      labels.tofile(os.path.join(out_dir, f"{os.path.splitext(filename)[0]}.label"))
 
       occlusions = pack(data["occluded"])
-      occlusions.tofile(os.path.join(out_dir, os.path.splitext(filename)[0] + ".occluded"))
+      occlusions.tofile(
+          os.path.join(out_dir, f"{os.path.splitext(filename)[0]}.occluded"))
 
       invalid = pack(data["invalid"])
-      invalid.tofile(os.path.join(out_dir, os.path.splitext(filename)[0] + ".invalid"))
+      invalid.tofile(
+          os.path.join(out_dir, f"{os.path.splitext(filename)[0]}.invalid"))

@@ -7,12 +7,10 @@ import yaml
 import sys
 import numpy as np
 
-# possible splits
-splits = ["train", "valid", "test"]
-
 # possible backends
 backends = ["numpy", "torch"]
 
+splits = ["train", "valid", "test"]
 if __name__ == '__main__':
   parser = argparse.ArgumentParser("./evaluate_semantics.py")
   parser.add_argument(
@@ -30,22 +28,22 @@ if __name__ == '__main__':
       ' we look for the labels in the same directory as dataset'
   )
   parser.add_argument(
-      '--split', '-s',
+      '--split',
+      '-s',
       type=str,
       required=False,
       choices=["train", "valid", "test"],
       default="valid",
-      help='Split to evaluate on. One of ' +
-      str(splits) + '. Defaults to %(default)s',
+      help=f'Split to evaluate on. One of {splits}. Defaults to %(default)s',
   )
   parser.add_argument(
-      '--backend', '-b',
+      '--backend',
+      '-b',
       type=str,
       required=False,
-      choices= ["numpy", "torch"],
+      choices=["numpy", "torch"],
       default="numpy",
-      help='Backend for evaluation. One of ' +
-      str(backends) + ' Defaults to %(default)s',
+      help=f'Backend for evaluation. One of {backends} Defaults to %(default)s',
   )
   parser.add_argument(
       '--datacfg', '-dc',
@@ -96,7 +94,7 @@ if __name__ == '__main__':
   # assert backend
   assert(FLAGS.backend in backends)
 
-  print("Opening data config file %s" % FLAGS.datacfg)
+  print(f"Opening data config file {FLAGS.datacfg}")
   DATA = yaml.safe_load(open(FLAGS.datacfg, 'r'))
 
   # get number of interest classes, and the label mappings
@@ -108,7 +106,7 @@ if __name__ == '__main__':
 
   # make lookup table for mapping
   maxkey = max(class_remap.keys())
-  
+
   # +100 hack making lut bigger just in case there are unknown labels
   remap_lut = np.zeros((maxkey + 100), dtype=np.int32)
   remap_lut[list(class_remap.keys())] = list(class_remap.values())
@@ -130,7 +128,7 @@ if __name__ == '__main__':
     from auxiliary.np_ioueval import iouEval
     evaluator = iouEval(nr_classes, ignore)
   else:
-    print("Backend for evaluator should be one of ", str(backends))
+    print("Backend for evaluator should be one of ", backends)
     quit()
   evaluator.reset()
 
@@ -141,8 +139,7 @@ if __name__ == '__main__':
   label_names = []
   for sequence in test_sequences:
     sequence = '{0:02d}'.format(int(sequence))
-    label_paths = os.path.join(FLAGS.dataset, "sequences",
-                               str(sequence), "labels")
+    label_paths = os.path.join(FLAGS.dataset, "sequences", sequence, "labels")
     # populate the label names
     seq_label_names = [os.path.join(dp, f) for dp, dn, fn in os.walk(
         os.path.expanduser(label_paths)) for f in fn if ".label" in f]
@@ -169,11 +166,9 @@ if __name__ == '__main__':
   assert(len(label_names) == len(pred_names))
 
   progress = 10
-  count = 0
   print("Evaluating sequences: ", end="", flush=True)
   # open each file, get the tensor, and make the iou comparison
-  for label_file, pred_file in zip(label_names, pred_names):
-    count += 1
+  for count, (label_file, pred_file) in enumerate(zip(label_names, pred_names), start=1):
     if 100 * count / len(label_names) > progress:
       print("{:d}% ".format(progress), end="", flush=True)
       progress += 10
@@ -227,12 +222,10 @@ if __name__ == '__main__':
 
   # if codalab is necessary, then do it
   if FLAGS.codalab is not None:
-    results = {}
-    results["accuracy_mean"] = float(m_accuracy)
-    results["iou_mean"] = float(m_jaccard)
+    results = {"accuracy_mean": float(m_accuracy), "iou_mean": float(m_jaccard)}
     for i, jacc in enumerate(class_jaccard):
       if i not in ignore:
-        results["iou_"+class_strings[class_inv_remap[i]]] = float(jacc)
+        results[f"iou_{class_strings[class_inv_remap[i]]}"] = float(jacc)
     # save to file
     output_filename = os.path.join(FLAGS.codalab, 'scores.txt')
     with open(output_filename, 'w') as yaml_file:

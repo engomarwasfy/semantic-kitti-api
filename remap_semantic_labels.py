@@ -26,12 +26,12 @@ if __name__ == '__main__':
       help='Prediction dir. WARNING: This file remaps the predictions in place, so the original predictions will be lost. Cannot be used together with -dataset- flag.'
   )
   parser.add_argument(
-      '--split', '-s',
+      '--split',
+      '-s',
       type=str,
       required=False,
       default="valid",
-      help='Split to evaluate on. One of ' +
-      str(splits) + '. Defaults to %(default)s',
+      help=f'Split to evaluate on. One of {splits}. Defaults to %(default)s',
   )
   parser.add_argument(
       '--datacfg', '-dc',
@@ -63,9 +63,8 @@ if __name__ == '__main__':
   # only predictions or dataset can be handled at once and one MUST be given (xor)
   assert((FLAGS.dataset is not None) != (FLAGS.predictions is not None))
 
-  # check name
-  root_directory = ""
   label_directory = ""
+  root_directory = ""
   if(FLAGS.dataset is not None):
     root_directory = FLAGS.dataset
     label_directory = "labels"
@@ -79,7 +78,7 @@ if __name__ == '__main__':
   # assert split
   assert(FLAGS.split in splits)
 
-  print("Opening data config file %s" % FLAGS.datacfg)
+  print(f"Opening data config file {FLAGS.datacfg}")
   DATA = yaml.safe_load(open(FLAGS.datacfg, 'r'))
 
   # get number of interest classes, and the label mappings
