@@ -245,7 +245,7 @@ class Window:
     """ open given sequences directory and get filenames of relevant files. """
     self.subdirs = [subdir for subdir in ["voxels", "predictions"] if os.path.exists(os.path.join(directory, subdir))]
 
-    if len(self.subdirs) == 0: raise RuntimeError("Neither 'voxels' nor 'predictions' found in " + directory)
+    if not self.subdirs: raise RuntimeError("Neither 'voxels' nor 'predictions' found in " + directory)
 
     self.availableData = {}
     self.data = {}
@@ -347,13 +347,13 @@ class Window:
     self.impl.keyboard_callback(window, key, scancode, action, mods)
 
     if not imgui.get_io().want_capture_keyboard:
-      if key == glfw.KEY_B or key == glfw.KEY_LEFT:
+      if key in [glfw.KEY_B, glfw.KEY_LEFT]:
         self.currentTimestep = self.sliderValue = max(0, self.currentTimestep - 1)
 
-      if key == glfw.KEY_N or key == glfw.KEY_RIGHT:
+      if key in [glfw.KEY_N, glfw.KEY_RIGHT]:
         self.currentTimestep = self.sliderValue = min(self.num_scans - 1, self.currentTimestep + 1)
 
-      if key == glfw.KEY_Q or key == glfw.KEY_ESCAPE:
+      if key in [glfw.KEY_Q, glfw.KEY_ESCAPE]:
         exit(0)
 
   def char_callback(self, window, char):
@@ -363,6 +363,10 @@ class Window:
     self.impl.scroll_callback(window, x_offset, y_offset)
 
   def run(self):
+    timeline_height = 35
+    play_delay = 1
+    refresh_rate = 0.05
+
     # Loop until the user closes the window
     while not glfw.window_should_close(self.window):
       # Poll for and process events
@@ -376,7 +380,6 @@ class Window:
 
       imgui.new_frame()
 
-      timeline_height = 35
       imgui.push_style_var(imgui.STYLE_WINDOW_ROUNDING, 0)
       imgui.push_style_var(imgui.STYLE_FRAME_ROUNDING, 0)
 
@@ -393,9 +396,6 @@ class Window:
         self.currentTimestep = self.sliderValue
 
       imgui.push_style_var(imgui.STYLE_FRAME_ROUNDING, 3)
-
-      play_delay = 1
-      refresh_rate = 0.05
 
       current_time = time.time()
 
@@ -416,10 +416,11 @@ class Window:
           self.button_backward_hold = False
 
         # start playback when button pressed long enough
-        if self.button_backward_hold and ((current_time - self.hold_start) > play_delay):
-          if (current_time - self.lastUpdate) > refresh_rate:
-            self.currentTimestep = self.sliderValue = self.currentTimestep - 1
-            self.lastUpdate = current_time
+        if (self.button_backward_hold
+            and ((current_time - self.hold_start) > play_delay)
+            and (current_time - self.lastUpdate) > refresh_rate):
+          self.currentTimestep = self.sliderValue = self.currentTimestep - 1
+          self.lastUpdate = current_time
 
       imgui.same_line(spacing=2)
       changed = imgui.button(">", 20)
@@ -439,10 +440,11 @@ class Window:
           self.button_forward_hold = False
 
         # start playback when button pressed long enough
-        if self.button_forward_hold and ((current_time - self.hold_start) > play_delay):
-          if (current_time - self.lastUpdate) > refresh_rate:
-            self.currentTimestep = self.sliderValue = self.currentTimestep + 1
-            self.lastUpdate = current_time
+        if (self.button_forward_hold
+            and ((current_time - self.hold_start) > play_delay)
+            and (current_time - self.lastUpdate) > refresh_rate):
+          self.currentTimestep = self.sliderValue = self.currentTimestep + 1
+          self.lastUpdate = current_time
 
       imgui.pop_style_var(3)
       imgui.end()

@@ -21,20 +21,18 @@ def parse_calibration(filename):
   """
   calib = {}
 
-  calib_file = open(filename)
-  for line in calib_file:
-    key, content = line.strip().split(":")
-    values = [float(v) for v in content.strip().split()]
+  with open(filename) as calib_file:
+    for line in calib_file:
+      key, content = line.strip().split(":")
+      values = [float(v) for v in content.strip().split()]
 
-    pose = np.zeros((4, 4))
-    pose[0, 0:4] = values[0:4]
-    pose[1, 0:4] = values[4:8]
-    pose[2, 0:4] = values[8:12]
-    pose[3, 3] = 1.0
+      pose = np.zeros((4, 4))
+      pose[0, 0:4] = values[:4]
+      pose[1, 0:4] = values[4:8]
+      pose[2, 0:4] = values[8:12]
+      pose[3, 3] = 1.0
 
-    calib[key] = pose
-
-  calib_file.close()
+      calib[key] = pose
 
   return calib
 
@@ -58,7 +56,7 @@ def parse_poses(filename, calibration):
     values = [float(v) for v in line.strip().split()]
 
     pose = np.zeros((4, 4))
-    pose[0, 0:4] = values[0:4]
+    pose[0, 0:4] = values[:4]
     pose[1, 0:4] = values[4:8]
     pose[2, 0:4] = values[8:12]
     pose[3, 3] = 1.0
@@ -119,7 +117,7 @@ if __name__ == '__main__':
 
     if os.path.exists(output_folder) or os.path.exists(
             velodyne_folder) or os.path.exists(labels_folder):
-      print("Output folder '{}' already exists!".format(output_folder))
+      print(f"Output folder '{output_folder}' already exists!")
       answer = input("Overwrite? [y/N] ")
       if answer != "y":
         print("Aborted.")
@@ -147,7 +145,7 @@ if __name__ == '__main__':
 
     progress = 10
 
-    print("Processing {} ".format(folder), end="", flush=True)
+    print(f"Processing {folder} ", end="", flush=True)
 
     for i, f in enumerate(scan_files):
       # read scan and labels, get pose
@@ -156,7 +154,8 @@ if __name__ == '__main__':
 
       scan = scan.reshape((-1, 4))
 
-      label_filename = os.path.join(input_folder, "labels", os.path.splitext(f)[0] + ".label")
+      label_filename = os.path.join(input_folder, "labels",
+                                    f"{os.path.splitext(f)[0]}.label")
       labels = np.fromfile(label_filename, dtype=np.uint32)
       labels = labels.reshape((-1))
 
@@ -169,7 +168,7 @@ if __name__ == '__main__':
 
       # prepare single numpy array for all points that can be written at once.
       num_concat_points = points.shape[0]
-      num_concat_points += sum([past["points"].shape[0] for past in history])
+      num_concat_points += sum(past["points"].shape[0] for past in history)
       concated_points = np.zeros((num_concat_points * 4), dtype = np.float32)
       concated_labels = np.zeros((num_concat_points), dtype = np.uint32)
 
@@ -191,7 +190,8 @@ if __name__ == '__main__':
 
       # write scan and labels in one pass.
       concated_points.tofile(os.path.join(velodyne_folder, f))
-      concated_labels.tofile(os.path.join(labels_folder, os.path.splitext(f)[0] + ".label")) 
+      concated_labels.tofile(
+          os.path.join(labels_folder, f"{os.path.splitext(f)[0]}.label")) 
 
       # append current data to history queue.
       history.appendleft({
@@ -210,4 +210,4 @@ if __name__ == '__main__':
     print("finished.")
 
 
-  print("execution time: {}".format(time.time() - start_time))
+  print(f"execution time: {time.time() - start_time}")
